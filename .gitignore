@@ -14,7 +14,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-# lib/
 pyscf/lib/CMakeLists.txt
 *.dylib
 lib64/
@@ -111,6 +110,10 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+lib/
+bin/
+pyvenv.cfg
+pyscf-forge.code-workspace
 
 # Spyder project settings
 .spyderproject
