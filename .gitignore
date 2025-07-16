@@ -14,7 +14,9 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/
+pyscf/lib/CMakeLists.txt
+*.dylib
 lib64/
 parts/
 sdist/

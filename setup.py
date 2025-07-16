@@ -17,9 +17,9 @@ NAME = 'pyscf_forge'
 AUTHOR = 'Pyscf Developer'
 AUTHOR_EMAIL = None
 DESCRIPTION  = 'Staging ground for PySCF core features'
-SO_EXTENSIONS = {
+SO_EXTENSIONS = {'pyscf.lib.libevalao': ['pyscf/lib/isdfx/evalao.c']
 }
-DEPENDENCIES = ['pyscf', 'numpy']
+DEPENDENCIES = ['pyscf', 'numpy','joblib','pyfftw']
 VERSION = '1.0.3'
 
 #######################################################################
@@ -58,7 +58,7 @@ def get_platform():
 pyscf_lib_dir = os.path.join(topdir, 'pyscf', 'lib')
 def make_ext(pkg_name, srcs,
              libraries=[], library_dirs=[pyscf_lib_dir],
-             include_dirs=[], extra_compile_flags=[],
+             include_dirs=[], extra_compile_flags=['-O3', '-fPIC'],
              extra_link_flags=[], **kwargs):
     if sys.platform.startswith('darwin'):  # OSX
         from distutils.sysconfig import get_config_vars
