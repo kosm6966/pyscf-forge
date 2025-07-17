@@ -53,12 +53,13 @@ import functools
 import numpy
 import scipy
 import pyscf
+from pyscf.mgpaw import libevalao
 from pyscf import lib
-from pyscf import isdfx
 from pyscf.pbc import tools
 import pyfftw
 from threadpoolctl import threadpool_limits
 from joblib import Parallel, delayed, parallel_backend
+
 
 # =============================================================================
 # FFT Execution Functions
@@ -932,12 +933,12 @@ def make_universal_grid(myisdf, exp_on_grid, mg):
         I = ug.exponents.argmin()
         nimg = numpy.zeros((3,), numpy.int32)
         La = numpy.ascontiguousarray(a.diagonal(), numpy.float64)  # Assumes orthogonal
-        isdfx.getNimg(ug.exponents[I], ug.l[I], La, nimg)
+        libevalao.getNimg(ug.exponents[I], ug.l[I], La, nimg)
         ug.nLs = int(numpy.prod(2 * nimg + 1))
         ug.Ls = numpy.zeros((ug.nLs, 3), numpy.float64)
         ug.nimages = numpy.zeros_like(ug.l)
         ug.images = numpy.zeros((ug.nLs * ug.nexp,), numpy.int32)
-        isdfx.formImages(ug.exponents, ug.l, ug.nexp, La, ug.Ls, nimg, ug.nimages, ug.images)
+        libevalao.formImages(ug.exponents, ug.l, ug.nexp, La, ug.Ls, nimg, ug.nimages, ug.images)
     return [ug]
 
 
@@ -1573,14 +1574,14 @@ def place_functions_on_atomgrids(myisdf, atomgrids, mg):
             )
             I = ag.exponents.argmin()
             nimg = numpy.zeros((3,), numpy.int32)
-            # PYSCF: nimgs = numpy.ceil(rcut * isdfx.norm(cell.reciprocal_vectors(norm_to=1), axis=1) + boundary_penalty).astype(int)
+            # PYSCF: nimgs = numpy.ceil(rcut * libevalao.norm(cell.reciprocal_vectors(norm_to=1), axis=1) + boundary_penalty).astype(int)
             La = numpy.ascontiguousarray(cell.lattice_vectors().diagonal(), numpy.float64)
-            isdfx.getNimg(ag.exponents[I], ag.l[I], La, nimg)
+            libevalao.getNimg(ag.exponents[I], ag.l[I], La, nimg)
             ag.nLs = numpy.prod(2 * nimg + 1)
             ag.Ls = numpy.zeros((ag.nLs, 3), numpy.float64)
             ag.nimages = numpy.zeros_like(ag.l)
             ag.images = numpy.zeros((ag.nLs * nexp,), numpy.int32)
-            isdfx.formImages(ag.exponents, ag.l, nexp, La, ag.Ls, nimg, ag.nimages, ag.images)
+            libevalao.formImages(ag.exponents, ag.l, nexp, La, ag.Ls, nimg, ag.nimages, ag.images)
 
     with threadpool_limits(limits=1):
         with parallel_backend("threading", n_jobs=myisdf.joblib_njobs):
@@ -1811,7 +1812,7 @@ def eval_ao(myisdf, ag, mg, from_pyscf=False):
                 numpy.exp(1.0j * numpy.dot(ag.Ls, myisdf.kpts.T)), order="C"
             )  # nLs x Nk
             ao_vals = numpy.zeros((nK, ag.nao, nG), numpy.complex128, order="C")
-            isdfx.pbceval_all_aos(
+            libevalao.pbceval_all_aos(
                 ag.nexp,
                 ao_vals,
                 ag.x0,
@@ -1835,7 +1836,7 @@ def eval_ao(myisdf, ag, mg, from_pyscf=False):
             ao_vals = [ao_vals_k[:, ag.cube_to_sphere_index] for ao_vals_k in ao_vals]  # nLs x Nk
         else:
             ao_vals = numpy.zeros((ag.nao, nG), numpy.float64, order="C")
-            isdfx.eval_all_aos(
+            libevalao.eval_all_aos(
                 ag.nexp,
                 ao_vals,
                 ag.x0,

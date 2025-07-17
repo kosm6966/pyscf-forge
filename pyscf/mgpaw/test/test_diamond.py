@@ -2,7 +2,7 @@ import numpy
 import pyscf
 import sys, os
 from pyscf.pbc import gto
-from pyscf.isdfx import isdfx
+from pyscf.mgpaw import isdfx
 
 if __name__ == "__main__":
     sys.stdout = open(os.devnull, "w")

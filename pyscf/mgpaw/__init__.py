@@ -3,13 +3,13 @@
 import os
 import ctypes
 from pyscf import lib
-import numpy as np
+import numpy
 
 # Load the shared library
 libevalao = lib.load_library('libevalao')
 
 # Bind functions
-ndpointer = np.ctypeslib.ndpointer
+ndpointer = numpy.ctypeslib.ndpointer
 
 getNimg = libevalao.getNimg
 getNimg.restype = ctypes.c_double
@@ -41,7 +41,7 @@ eval_all_aos.argtypes = [ctypes.c_int, ndpointer(ctypes.c_double, flags="C_CONTI
 
 pbceval_all_aos = libevalao.pbceval_all_aos
 pbceval_all_aos.restype = None
-pbceval_all_aos.argtypes = [ctypes.c_int, ndpointer(np.complex128, flags="C_CONTIGUOUS"),
+pbceval_all_aos.argtypes = [ctypes.c_int, ndpointer(numpy.complex128, flags="C_CONTIGUOUS"),
                          ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),
                          ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),
                          ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),
@@ -50,5 +50,5 @@ pbceval_all_aos.argtypes = [ctypes.c_int, ndpointer(np.complex128, flags="C_CONT
                          ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),
                          ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),ndpointer(ctypes.c_int, flags="C_CONTIGUOUS"),ctypes.c_int,ndpointer(ctypes.c_double, flags="C_CONTIGUOUS"),
                          ctypes.c_int,
-                         ndpointer(np.complex128, flags="C_CONTIGUOUS")]
+                         ndpointer(numpy.complex128, flags="C_CONTIGUOUS")]
 
