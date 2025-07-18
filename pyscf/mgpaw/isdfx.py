@@ -1361,7 +1361,7 @@ def make_exchange_lists(myisdf):
         ),
         flush=True,
     )
-    print("Dense Exchange Grids:", time.time()-t0, flush=True)
+    # print("Dense Exchange Grids:", time.time()-t0, flush=True)
 
     exp_list = numpy.unique(numpy.concatenate([a2.exponents for a2 in atoms2]))
     l_list = numpy.unique(numpy.concatenate([a2.l for a2 in atoms2]))
@@ -1414,7 +1414,7 @@ def make_exchange_lists(myisdf):
         ),
         flush=True,
     )
-    print("Sparse Exchange Grids:", time.time()-t0, flush=True)
+    # print("Sparse Exchange Grids:", time.time()-t0, flush=True)
     return mg, atomgrids
 
 
@@ -2460,6 +2460,7 @@ def get_thc_potential(myisdf, atomID, C, mem_limited):
     atomgrids = myisdf.atom_grids_k
     ai = atomgrids[atomID]
     if ai.nao == 0:
+        myisdf.W[atomID] = [[]]
         return
     coord_idx = ai.coord_idx
     mg = myisdf.full_grids_k
@@ -2531,7 +2532,7 @@ def get_thc_potential_kpts(myisdf, atomID, C, mem_limited):
     cell = myisdf.cell_unc
     ai = atomgrids[atomID]
     if ai.nao == 0:
-        myisdf.W[atomID] = []
+        myisdf.W[atomID] = [[]]
         return
 
     nG0 = mg[0].Ng
