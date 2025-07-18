@@ -27,7 +27,7 @@ if __name__ == "__main__":
     refcell.basis = "gth-dzvp-molopt-sr"
     refcell.pseudo = "gth-pbe"
     refcell.spin = 0
-    refcell.verbose = 6
+    refcell.verbose = 0
     refcell.ke_cutoff = 70
     refcell.exp_to_discard = 0.2
     refcell.build()
@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     ########### MG-ISDF-occRI ############
     sys.stdout = open(os.devnull, "w")
-    refcell.verbose = 4
+    refcell.verbose = 0
     refcell.build()
     mf = pyscf.pbc.scf.RHF(refcell)
     mf.with_df = isdfx.ISDFX(

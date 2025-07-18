@@ -5,12 +5,13 @@ import time
 
 import numpy
 import scipy
-from isdfx import isdfx
+from pyscf.mgpaw import isdfx
 from pyscf import lib
 from pyscf.lib import chkfile
 from pyscf.pbc.dft import multigrid
 from pyscf.pbc.gto import Cell
 from pyscf.scf.uhf import mulliken_spin_pop
+from ase.io import read
 
 TMPDIR = os.environ.get("PYSCF_TMPDIR", tempfile.gettempdir())
 PYSCF_MAX_MEMORY = int(os.getenv("PYSCF_MAX_MEMORY", 800))
@@ -89,7 +90,6 @@ def get_en(mf, dm, with_j=True, with_k=True):
     # e_tot = mf.energy_tot(dm=dm, vhf=vhf)
     return e_coul
 
-
 def flip_spin(mf, dm, afm_guess, bias):
     cell = mf.cell
 
@@ -136,9 +136,8 @@ def flip_spin(mf, dm, afm_guess, bias):
             nelec,
         )
         dm *= (nelec / ne).reshape(2, 1, 1)
-    return dm
 
-def get_dm0(cell, method, ncopy, init_guess="1e", afm_guess=None, bias=None):
+def get_dm0(cell, method, ncopy, init_guess="1e", afm_guess=None, bias=0.):
     # Use UHF to allow AFM ordering
     mf = method(cell)
     mf.chkfile = TMPDIR + "/dm0.chk"
@@ -359,16 +358,9 @@ def afm_guess_for_supercell(afm_guess, ncopies, natm):
 
 A2B = 1.889725989
 
-def get_spin(num_atoms, moment_per_atom=2.2):
-    """Returns integer spin = N_alpha - N_beta"""
-    total_moment = num_atoms * moment_per_atom
-    return int(round(total_moment))  # Must be integer for PySCF
-
 def get_ase_cell(formula, kecut, basis="gth-dzv", pseudo="gth-pbe",  exp_to_discard=0., spin=0, verbose=4):
     ase_atom = get_ase_atom(formula)
     atom = [[atom.symbol, atom.position] for atom in ase_atom]
-    if 'initial_magmoms' in ase_atom.arrays:    
-        spin = int(round( sum(ase_atom.arrays['initial_magmoms'])))
     cell = Cell(
         a=ase_atom.cell[:],
         unit="B",
@@ -386,24 +378,18 @@ def get_ase_cell(formula, kecut, basis="gth-dzv", pseudo="gth-pbe",  exp_to_disc
 def get_ase_atom(formula):
     from ase.build import bulk
     formula = formula.lower()
-    assert formula in ['lih','c','gaas','fe','ni', 'nio']
+    assert formula in ['lih','c', 'nio'] or formula[-5:] == '.vasp'
     if formula == 'lih':
         ase_atom = bulk('LiH', 'rocksalt', a=4.0834*A2B, cubic=True) # E. Zintl and A. Harder, Z. Phys. Chem. B 32 (1936) 113
     elif formula == 'c':
         from ase.lattice.cubic import Diamond
         ase_atom = Diamond(symbol='C', latticeconstant=3.5668*A2B) # CRC Handbook of Chemistry and Physics
-    elif formula == 'gaas':
-        ase_atom = ase_atom = bulk('GaAs', 'zincblende', a=5.653*A2B, cubic=True) #Madelung, Semiconductors: Data Handbook (2004)
-    elif formula == 'fe':
-        # Ferromagnetic.
-        ase_atom = bulk('Fe', 'bcc', a=2.866*A2B, cubic=True) # Vitos et al., Phys. Rev. B 61, 100 (2000)
-        ase_atom.set_initial_magnetic_moments([2.22]*len(ase_atom)) #Kittel, C. (2004). Introduction to Solid State Physics, 8th ed.
-    elif formula == 'ni':
-        # Ferromagnetic.
-        ase_atom = bulk('Ni', 'fcc', a=3.52*A2B, cubic=True) #Kittel, C. (2004). Introduction to Solid State Physics, 8th ed.
-        ase_atom.set_initial_magnetic_moments([0.606]*len(ase_atom)) #Kittel, C. (2004). Introduction to Solid State Physics, 8th ed.
     elif formula == 'nio':
         # AFM
         ase_atom = bulk('NiO', 'rocksalt', a=4.17*A2B, cubic=True) #Terakura et al., Phys. Rev. B 30, 4734 (1984)
-
+    elif formula[-5:] =='.vasp':
+        ase_atom = read(formula)
+        ase_atom.positions *= A2B
+        ase_atom.cell.array *= A2B
     return ase_atom
+

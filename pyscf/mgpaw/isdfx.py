@@ -740,7 +740,7 @@ def estimate_ke_cutoff(cell, precision):
     return numpy.array(ke_cut, numpy.float64)
 
 
-def _estimate_ke_cutoff(es, precision):
+def _estimate_ke_cutoff(es, precision, l=1):
     """
     Internal function to estimate kinetic energy cutoff for given exponents.
     
@@ -1296,6 +1296,7 @@ def make_exchange_lists(myisdf):
     natm = len(atoms)
     grid_max_exp = 0.0
     grid_min_exp = 1.0e8
+    l_list = []
     exp_list = []
     atoms2 = [None] * natm
     lmax = 0
@@ -1308,6 +1309,7 @@ def make_exchange_lists(myisdf):
         diffuse_exp = (1 - idx).astype(numpy.bool_)
         sharp_exp = atomi.exponents[idx]
         exp_list.extend(sharp_exp)
+        l_list.extend(atomi.l[idx])
         atoms2[i] = Atoms(cell, myisdf.rcut_epsilon, i, atomi.shell_index[diffuse_exp])
         lmax = max(max(atomi.l[idx], default=0), lmax)
         atomgrids.append(
@@ -1321,9 +1323,10 @@ def make_exchange_lists(myisdf):
             ),
         )
 
+    grid_max_exp = max(exp_list)
+    max_l = (numpy.asarray(l_list)[(exp_list==max(exp_list)).nonzero()[0]]).max()
     exp_list = numpy.unique(exp_list)
     nexp = exp_list.shape[0]
-    grid_max_exp = max(exp_list)
     grid_min_exp = min(exp_list)
     ke_max = log_ke_epsilon * grid_max_exp
     ke_min = log_ke_epsilon * grid_min_exp
@@ -1360,19 +1363,13 @@ def make_exchange_lists(myisdf):
     )
     print("Dense Exchange Grids:", time.time()-t0, flush=True)
 
-    t0 = time.time()
-    new_bs = {}
-    for symb, bs in cell._basis.items():
-        new_bs[symb] = [itm for itm in bs if itm[1][0] < grid_min_exp]
-    cell2 = cell.copy()
-    cell2.basis = new_bs
-    cell2.build(dump_input=False)
-
     exp_list = numpy.unique(numpy.concatenate([a2.exponents for a2 in atoms2]))
+    l_list = numpy.unique(numpy.concatenate([a2.l for a2 in atoms2]))
     sparse_shell_idx = numpy.concatenate([a2.shell_index for a2 in atoms2])
     nexp = exp_list.shape[0]
     grid_max_exp = max(exp_list)
     grid_min_exp = min(exp_list)
+    lmax = max(l_list)
     ke_min = log_ke_epsilon * grid_min_exp
     # If a user specified mesh is used, take the ke_cutoff from it.
     if myisdf.k_grid_mesh is not None:
@@ -1380,13 +1377,13 @@ def make_exchange_lists(myisdf):
         ke_grid = ke_max
         mg.append(Grid(myisdf, ke_grid, myisdf.k_grid_mesh[-1]))
     else:
-        # ke_max = _estimate_ke_cutoff(grid_max_exp, myisdf.ke_epsilon)
-        sparse_grid_ke = pyscf.pbc.gto.cell.estimate_ke_cutoff(cell2)
-        dense_grid_ke = pyscf.pbc.gto.cell.estimate_ke_cutoff(cell)
+        # ke_max = _estimate_ke_cutoff(grid_max_exp, 1.e-3)
+        sparse_grid_ke = pyscf.pbc.gto.cell._estimate_ke_cutoff(grid_max_exp, lmax, 1)
+        dense_grid_ke = pyscf.pbc.gto.cell._estimate_ke_cutoff(max_exp, max_l, 1)
         ke_max = sparse_grid_ke/dense_grid_ke * max(tools.mesh_to_cutoff(cell.lattice_vectors(), cell.mesh))
         ke_grid = ke_max
-        while (tools.cutoff_to_mesh(cell2.lattice_vectors(), ke_grid) >= mg[-1].mesh).all():
-            ke_grid -= 0.1
+        while (tools.cutoff_to_mesh(cell.lattice_vectors(), ke_grid) >= mg[-1].mesh).all():
+            ke_grid -= 10.
         mg.append(Grid(myisdf, ke_grid))
 
     mg[-1].ke_min = ke_min

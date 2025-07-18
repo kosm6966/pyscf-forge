@@ -4,7 +4,7 @@ import tempfile
 import time
 
 import numpy
-from isdfx import isdfx
+from pyscf.mgpaw import isdfx
 from pyscf import lib
 from pyscf.lib import chkfile
 from pyscf.pbc.dft import multigrid
