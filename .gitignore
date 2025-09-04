@@ -137,7 +137,4 @@ dmypy.json
 .DS_Store
 
 # Multigrid modules (development)
-multigrid/
-**/multigrid/
-examples/occri/multigrid/
 pytest.ini
